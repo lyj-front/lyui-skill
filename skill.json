@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "name": "lyui",
+  "displayName": "LyUI 组件库 Skill",
+  "version": "0.1.0",
+  "description": "LyUI（ly-ui）Vue 3 组件库与 docs 内全部 zh-CN Markdown 实例用法；含 ad-dialog 等独立包文档。",
+  "primaryFramework": "vue3",
+  "docsRoot": "docs",
+  "cursorSkill": {
+    "entry": "SKILL.md",
+    "triggerTerms": [
+      "lyui",
+      "ly-ui",
+      "LyUI",
+      "组件库",
+      "LyUI组件库"
+    ]
+  },
+  "repositoryLayout": {
+    "core": "src/core",
+    "adapters": "src/adapters",
+    "ui": "src/ui",
+    "utils": "src/utils",
+    "examples": "examples",
+    "docs": "docs"
+  }
+}
