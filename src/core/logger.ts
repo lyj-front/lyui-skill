@@ -16,7 +16,24 @@ export interface LogEntry {
   error?: string;
 }
 
-const LOG_DIR = process.env.LYUI_LOG_DIR || join(process.cwd(), 'logs');
+// 检测是否在 Cursor 环境中
+function isCursorEnvironment(): boolean {
+  return process.env.CURSOR_WORKSPACE_ID !== undefined || 
+         process.cwd().includes('.cursor/skills');
+}
+
+// 获取日志目录
+function getLogDir(): string {
+  // 如果在 Cursor 环境中，使用 Cursor 的日志目录
+  if (isCursorEnvironment()) {
+    const cursorLogDir = join(process.env.HOME || process.env.USERPROFILE || '', '.cursor', 'logs');
+    return cursorLogDir;
+  }
+  // 否则使用项目目录
+  return process.env.LYUI_LOG_DIR || join(process.cwd(), 'logs');
+}
+
+const LOG_DIR = getLogDir();
 const LOG_FILE = join(LOG_DIR, 'lyui-trigger.log');
 
 // 确保日志目录存在

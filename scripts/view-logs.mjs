@@ -14,7 +14,20 @@
 import { readFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 
-const LOG_FILE = join(process.cwd(), 'logs', 'lyui-trigger.log');
+// 检测 Cursor 日志目录
+function getLogFile() {
+  const cursorLogDir = join(process.env.HOME || process.env.USERPROFILE || '', '.cursor', 'logs');
+  const cursorLogFile = join(cursorLogDir, 'lyui-trigger.log');
+  
+  if (existsSync(cursorLogFile)) {
+    return cursorLogFile;
+  }
+  
+  // 回退到项目目录
+  return join(process.cwd(), 'logs', 'lyui-trigger.log');
+}
+
+const LOG_FILE = getLogFile();
 
 function parseArgs() {
   const args = { today: false, tail: 0, json: false, stats: false };
@@ -89,9 +102,16 @@ function showStats(logs) {
 
 function main() {
   const args = parseArgs();
+  
+  console.log(`日志文件: ${LOG_FILE}`);
+  
   let logs = loadLogs();
   
-  if (logs.length === 0) return;
+  if (logs.length === 0) {
+    console.log('暂无日志记录');
+    console.log('\n提示: 日志会在 AI 调用 searchComponents 或 suggestComponents 时自动记录');
+    return;
+  }
   
   // 过滤今天的日志
   if (args.today) {
