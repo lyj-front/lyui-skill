@@ -9,9 +9,9 @@ import {
   mkdirSync,
   readdirSync,
   writeFileSync,
-} from 'fs';
-import { join, dirname } from 'path';
-import { fileURLToPath } from 'url';
+} from 'node:fs';
+import { join, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const SKILL_ROOT = join(__dirname, '..');
@@ -23,7 +23,7 @@ function main() {
   mkdirSync(DEST_DOCS, { recursive: true });
 
   if (existsSync(MONOREPO_ZH)) {
-    const names = readdirSync(MONOREPO_ZH).filter((f) => f.endsWith('.md'));
+    const names = readdirSync(MONOREPO_ZH).filter(f => f.endsWith('.md'));
     for (const name of names) {
       copyFileSync(join(MONOREPO_ZH, name), join(DEST_DOCS, name));
     }
@@ -35,10 +35,10 @@ function main() {
   }
 
   const files = readdirSync(DEST_DOCS)
-    .filter((f) => f.endsWith('.md'))
+    .filter(f => f.endsWith('.md'))
     .sort((a, b) => a.localeCompare(b));
 
-  const lines = files.map((f) => `  '${f}',`);
+  const lines = files.map(f => `  '${f}',`);
   const body = `/**
  * 自动由 scripts/sync-docs.mjs 生成，请勿手改。
  * 运行: npm run sync-docs

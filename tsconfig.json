@@ -11,7 +11,17 @@
     "isolatedModules": true,
     "resolveJsonModule": true,
     "rootDir": ".",
-    "types": []
+    "types": [],
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true
   },
-  "include": ["src/**/*.ts", "examples/**/*.ts"]
+  "include": ["src/**/*.ts", "examples/**/*.ts"],
+  "exclude": ["node_modules", "dist", "tests"]
 }

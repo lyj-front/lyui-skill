@@ -15,8 +15,22 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+/**
+ * @typedef {Object} Args
+ * @property {string|null} input
+ * @property {number} top
+ */
+
+/**
+ * @param {string[]} argv
+ * @returns {Args}
+ */
 function parseArgs(argv) {
+  /** @type {Args} */
   const args = { input: null, top: 30 };
   for (let i = 2; i < argv.length; i++) {
     const a = argv[i];
@@ -31,6 +45,9 @@ function parseArgs(argv) {
   return args;
 }
 
+/**
+ * @returns {string[]}
+ */
 function readTriggerTerms() {
   const skillJsonPath = path.resolve(process.cwd(), 'skill.json');
   const raw = fs.readFileSync(skillJsonPath, 'utf8');
@@ -39,6 +56,10 @@ function readTriggerTerms() {
   return Array.from(new Set(terms)).filter(Boolean);
 }
 
+/**
+ * @param {string} inputPath
+ * @returns {Generator<string>}
+ */
 function* walkJsonlFiles(inputPath) {
   const p = path.resolve(process.cwd(), inputPath);
   const st = fs.statSync(p);
@@ -54,6 +75,10 @@ function* walkJsonlFiles(inputPath) {
   }
 }
 
+/**
+ * @param {string} line
+ * @returns {object|null}
+ */
 function safeJsonParse(line) {
   try {
     return JSON.parse(line);
@@ -62,6 +87,10 @@ function safeJsonParse(line) {
   }
 }
 
+/**
+ * @param {object|null} payload
+ * @returns {string}
+ */
 function extractText(payload) {
   if (!payload) return '';
   // common shapes: { content: "..." } or OpenAI-ish { message: { content: "..." } }
@@ -71,10 +100,20 @@ function extractText(payload) {
   return '';
 }
 
+/**
+ * @param {Map<string, number>} map
+ * @param {string} key
+ * @param {number} [n]
+ */
 function inc(map, key, n = 1) {
   map.set(key, (map.get(key) || 0) + n);
 }
 
+/**
+ * @param {Map<string, number>} map
+ * @param {number} n
+ * @returns {Array<{key: string, count: number}>}
+ */
 function topN(map, n) {
   return Array.from(map.entries())
     .sort((a, b) => b[1] - a[1])
@@ -94,7 +133,7 @@ const counts = {
   docsFileMentions: new Map(),
 };
 
-const termRegexes = triggerTerms.map((t) => ({
+const termRegexes = triggerTerms.map(t => ({
   term: t,
   re: new RegExp(t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi'),
 }));
@@ -152,4 +191,3 @@ const summary = {
 };
 
 process.stdout.write(JSON.stringify(summary, null, 2) + '\n');
-

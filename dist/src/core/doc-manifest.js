@@ -105,3 +105,4 @@ export const DOC_FILES = [
     'wx-canvas-img.md',
     'zjCli.md',
 ];
+//# sourceMappingURL=doc-manifest.js.map

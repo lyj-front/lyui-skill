@@ -8,19 +8,17 @@ import {
   getComponentMeta,
   searchComponents,
   getRelatedComponents,
-  getComponentsByCategory,
   getStandalonePackages,
-  
+
   // 智能搜索
-  smartSearch,
   suggestComponents,
   getCategoryStats,
-  
+
   // 常量
   CATEGORY_NAMES,
   COMPONENT_REGISTRY,
 } from '../src/core/registry.js';
-import type { ComponentMeta, SearchResult, ComponentCategory } from '../src/core/types.js';
+import type { ComponentMeta, ComponentCategory } from '../src/core/types.js';
 
 console.log('=== LyUI 组件注册表演示 ===\n');
 
@@ -34,17 +32,17 @@ console.log(`   总计: ${COMPONENT_REGISTRY.length} 个组件\n`);
 
 // 2. 搜索组件示例
 console.log('2. 搜索 "按钮":');
-const buttonResults = searchComponents('按钮');
-buttonResults.slice(0, 5).forEach((comp: ComponentMeta) => {
+const buttonResults = searchComponents('按钮', { limit: 5 });
+buttonResults.forEach((comp: ComponentMeta) => {
   console.log(`   - ${comp.displayName} (${comp.id}): ${comp.keywords.slice(0, 3).join(', ')}...`);
 });
 console.log();
 
 // 3. 智能搜索
 console.log('3. 智能搜索 "弹窗":');
-const dialogResults = smartSearch('弹窗');
-dialogResults.slice(0, 5).forEach(({ component, score, matchedBy }: SearchResult) => {
-  console.log(`   - ${component.displayName} (${component.id}): 分数=${score}, 匹配=${matchedBy.join(',')}`);
+const dialogResults = searchComponents('弹窗', { limit: 5, fuzzy: true });
+dialogResults.forEach((comp: ComponentMeta, index: number) => {
+  console.log(`   ${index + 1}. ${comp.displayName} (${comp.id})`);
 });
 console.log();
 
@@ -70,9 +68,9 @@ console.log();
 
 // 6. 使用场景推荐
 console.log('6. 表单场景推荐组件:');
-const formSuggestions = suggestComponents('需要一个表单来提交数据');
-formSuggestions.forEach((comp: ComponentMeta) => {
-  console.log(`   - ${comp.displayName} (${comp.id})`);
+const formSuggestions = suggestComponents('需要一个表单来提交数据', 5);
+formSuggestions.forEach(({ component, relevance }: { component: ComponentMeta; relevance: number }) => {
+  console.log(`   - ${component.displayName} (${component.id}): 相关度 ${(relevance * 100).toFixed(0)}%`);
 });
 console.log();
 

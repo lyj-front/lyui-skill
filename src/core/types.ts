@@ -27,6 +27,9 @@ export type ComponentCategory =
 /** 组件复杂度 */
 export type ComponentComplexity = 'simple' | 'medium' | 'complex';
 
+/** 匹配类型 */
+export type MatchType = 'id' | 'displayName' | 'keyword' | 'category' | 'prefix' | 'fuzzy';
+
 /** 组件元数据 */
 export interface ComponentMeta {
   /** 组件 ID（文件名不含扩展名） */
@@ -62,7 +65,17 @@ export interface SearchResult {
   /** 匹配分数（越高越相关） */
   score: number;
   /** 匹配来源 */
-  matchedBy: ('id' | 'displayName' | 'keyword' | 'category')[];
+  matchedBy: MatchType[];
+}
+
+/** 搜索选项 */
+export interface SearchOptions {
+  /** 返回结果数量限制 */
+  limit?: number;
+  /** 是否启用模糊匹配 */
+  fuzzy?: boolean;
+  /** 最低匹配分数阈值 */
+  threshold?: number;
 }
 
 /** 组件使用模式 */

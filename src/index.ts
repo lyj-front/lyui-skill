@@ -8,6 +8,34 @@ export * from './core/types.js';
 // 注册表功能（包含文档索引和组件元数据）
 export * from './core/registry.js';
 
+// 搜索索引（高级搜索功能）
+export { SearchIndex, type SearchOptions } from './core/search-index.js';
+
+// 拼音支持
+export { getPinyin, matchPinyin, generateSearchVariants } from './core/pinyin.js';
+
+// 缓存
+export { LRUCache, createSearchCache, getSearchCache, resetSearchCache } from './core/cache.js';
+
+// 错误处理
+export {
+  LyUIError,
+  SearchError,
+  DocParseError,
+  ComponentNotFoundError,
+  ValidationError,
+  safeExecute,
+  safeExecuteAsync,
+} from './core/errors.js';
+
+// 文档解析和索引
+export {
+  DocIndex,
+  getDocIndex,
+  resetDocIndex,
+  generateIndexReport,
+} from './core/doc-index.js';
+
 // 组件注册表（单独导出，便于按需引用）
 export {
   COMPONENT_REGISTRY,
@@ -26,3 +54,13 @@ export * from './utils/paths.js';
 
 // 框架适配器
 export * from './adapters/index.js';
+
+// 类型导出
+export type {
+  DocSection,
+  DocSectionType,
+  ParsedDoc,
+  ApiDefinition,
+  CodeExample,
+  DocIndexItem,
+} from './core/doc-parser.js';

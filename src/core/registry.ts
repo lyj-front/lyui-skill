@@ -1,3 +1,8 @@
+/**
+ * LyUI 组件注册表 - 统一导出模块
+ * 提供组件检索、搜索和推荐功能
+ */
+
 import { DOC_FILES } from './doc-manifest.js';
 import {
   COMPONENT_REGISTRY,
@@ -5,27 +10,65 @@ import {
   COMPONENTS_BY_CATEGORY,
   CATEGORY_NAMES,
   getComponentMeta,
-  searchComponents,
   getRelatedComponents,
   getComponentsByCategory,
   getStandalonePackages,
 } from './component-registry.js';
-import type { DocIndexEntry, ComponentMeta, ComponentCategory, SearchResult } from './types.js';
+import { SearchIndex, suggestComponentsByUseCase } from './search-index.js';
+import {
+  validateSearchQuery,
+  validateSearchOptions,
+  safeExecute,
+  ComponentNotFoundError,
+} from './errors.js';
+import type { DocIndexEntry, ComponentMeta, ComponentCategory, SearchResult, SearchOptions } from './types.js';
 
+// 导出类型
+export type { DocIndexEntry, ComponentMeta, ComponentCategory, SearchResult, SearchOptions };
+
+// 导出常量
 export {
-  // 从 component-registry 重新导出
   COMPONENT_REGISTRY,
   COMPONENT_MAP,
   COMPONENTS_BY_CATEGORY,
   CATEGORY_NAMES,
+};
+
+// 导出基础查询函数
+export {
   getComponentMeta,
-  searchComponents,
   getRelatedComponents,
   getComponentsByCategory,
   getStandalonePackages,
 };
 
-export type { DocIndexEntry, ComponentMeta, ComponentCategory, SearchResult };
+// 导出错误类型
+export {
+  LyUIError,
+  SearchError,
+  DocParseError,
+  ComponentNotFoundError,
+  ValidationError,
+  safeExecute,
+  safeExecuteAsync,
+} from './errors.js';
+
+// 初始化搜索索引（单例模式）
+let searchIndexInstance: SearchIndex | null = null;
+
+function getSearchIndex(): SearchIndex {
+  if (!searchIndexInstance) {
+    searchIndexInstance = new SearchIndex([...COMPONENT_REGISTRY]);
+  }
+  return searchIndexInstance;
+}
+
+/**
+ * 重置搜索索引（用于测试或动态更新注册表后）
+ */
+export function resetSearchIndex(): void {
+  searchIndexInstance = null;
+}
 
 /**
  * 列出所有文档文件
@@ -66,142 +109,106 @@ export function getMetaByDocFile(file: string): ComponentMeta | undefined {
 
 /**
  * 智能搜索组件
- * 结合文档索引和组件元数据进行搜索
+ * 使用倒排索引提供高效的搜索能力
+ * @deprecated 使用 searchComponents 替代
  */
-export function smartSearch(query: string): SearchResult[] {
-  const lowerQuery = query.toLowerCase().trim();
-  if (!lowerQuery) return [];
-
-  const results: Map<string, SearchResult> = new Map();
-
-  // 1. 通过组件注册表搜索
-  const componentMatches = searchComponents(lowerQuery);
-  for (const comp of componentMatches) {
-    const score = calculateScore(comp, lowerQuery);
-    results.set(comp.id, {
-      component: comp,
-      score,
-      matchedBy: getMatchedBy(comp, lowerQuery),
-    });
-  }
-
-  // 2. 如果没有匹配，尝试模糊匹配
-  if (results.size === 0) {
-    for (const comp of COMPONENT_REGISTRY) {
-      const score = fuzzyMatch(comp, lowerQuery);
-      if (score > 0) {
-        results.set(comp.id, {
-          component: comp,
-          score,
-          matchedBy: ['keyword'],
-        });
-      }
+export function smartSearch(query: string, options?: SearchOptions): SearchResult[] {
+  try {
+    validateSearchQuery(query);
+    if (options) {
+      validateSearchOptions(options as Record<string, unknown>);
     }
+    return getSearchIndex().search(query, options);
+  } catch (error) {
+    // 返回空数组而不是抛出错误，保持向后兼容
+    return [];
   }
-
-  // 按分数排序
-  return Array.from(results.values())
-    .sort((a, b) => b.score - a.score);
 }
 
 /**
- * 计算匹配分数
+ * 搜索组件
+ * 支持关键词、ID、显示名的模糊匹配，支持拼音搜索
+ * @param query - 搜索查询（支持中文、英文、拼音）
+ * @param options - 搜索选项
+ * @returns 匹配的组件列表
+ * @example
+ * // 中文搜索
+ * searchComponents('按钮') // 返回 button 组件
+ * // 拼音搜索
+ * searchComponents('anniu') // 返回 button 组件
+ * // 英文搜索
+ * searchComponents('button') // 返回 button 组件
  */
-function calculateScore(comp: ComponentMeta, query: string): number {
-  let score = 0;
-
-  // ID 完全匹配（最高分）
-  if (comp.id === query) score += 100;
-  else if (comp.id.toLowerCase() === query) score += 95;
-
-  // 显示名完全匹配
-  if (comp.displayName === query) score += 90;
-  else if (comp.displayName.toLowerCase() === query) score += 85;
-
-  // ID 包含
-  if (comp.id.toLowerCase().includes(query)) score += 50;
-
-  // 显示名包含
-  if (comp.displayName.toLowerCase().includes(query)) score += 40;
-
-  // 关键词匹配
-  const keywordMatches = comp.keywords.filter(k => k.toLowerCase().includes(query)).length;
-  score += keywordMatches * 20;
-
-  return score;
-}
-
-/**
- * 获取匹配来源
- */
-function getMatchedBy(comp: ComponentMeta, query: string): ('id' | 'displayName' | 'keyword' | 'category')[] {
-  const matched: ('id' | 'displayName' | 'keyword' | 'category')[] = [];
-  const q = query.toLowerCase();
-
-  if (comp.id.toLowerCase().includes(q)) matched.push('id');
-  if (comp.displayName.toLowerCase().includes(q)) matched.push('displayName');
-  if (comp.keywords.some(k => k.toLowerCase().includes(q))) matched.push('keyword');
-
-  return matched;
-}
-
-/**
- * 模糊匹配（用于没有直接匹配时的备用方案）
- */
-function fuzzyMatch(comp: ComponentMeta, query: string): number {
-  // 简单的字符包含检查
-  const allText = [
-    comp.id,
-    comp.displayName,
-    ...comp.keywords,
-  ].join(' ').toLowerCase();
-
-  // 检查 query 中的每个字符是否都存在于文本中
-  const queryChars = [...query];
-  const matched = queryChars.filter(char => allText.includes(char));
-
-  return matched.length / queryChars.length * 30; // 最高 30 分
+export function searchComponents(query: string, options?: SearchOptions): ComponentMeta[] {
+  const result = safeExecute(() => {
+    validateSearchQuery(query);
+    if (options) {
+      validateSearchOptions(options as Record<string, unknown>);
+    }
+    const results = getSearchIndex().search(query, options);
+    return results.map(r => r.component);
+  });
+  
+  return result ?? [];
 }
 
 /**
  * 获取分类统计信息
  */
-export function getCategoryStats(): { category: ComponentCategory; name: string; count: number }[] {
-  return (Object.keys(COMPONENTS_BY_CATEGORY) as ComponentCategory[])
-    .map(cat => ({
-      category: cat,
-      name: CATEGORY_NAMES[cat],
-      count: COMPONENTS_BY_CATEGORY[cat].length,
-    }));
+export function getCategoryStats(): Array<{
+  category: ComponentCategory;
+  name: string;
+  count: number;
+}> {
+  return (Object.keys(COMPONENTS_BY_CATEGORY) as ComponentCategory[]).map(cat => ({
+    category: cat,
+    name: CATEGORY_NAMES[cat],
+    count: COMPONENTS_BY_CATEGORY[cat].length,
+  }));
 }
 
 /**
- * 获取组件使用建议
- * 根据用户描述推荐合适的组件
+ * 根据使用场景推荐组件
+ * @param useCase - 用户描述的使用场景
+ * @param limit - 返回结果数量限制
+ * @returns 推荐的组件列表及其相关度
  */
-export function suggestComponents(useCase: string): ComponentMeta[] {
-  const useCaseLower = useCase.toLowerCase();
-
-  // 定义使用场景到组件的映射
-  const useCasePatterns: { pattern: RegExp; components: string[] }[] = [
-    { pattern: /表单|输入|提交|验证/, components: ['form', 'input', 'select', 'checkbox', 'radio'] },
-    { pattern: /表格|列表|数据展示|分页/, components: ['table', 'table-page', 'pagination', 'list'] },
-    { pattern: /弹窗|对话框|提示|确认/, components: ['dialog', 'message-box', 'message', 'notification'] },
-    { pattern: /导航|菜单|路由/, components: ['menu', 'tabs', 'breadcrumb', 'dropdown'] },
-    { pattern: /加载|等待|进度/, components: ['loading', 'skeleton', 'progress'] },
-    { pattern: /选择|下拉|级联/, components: ['select', 'cascader', 'tree', 'radio', 'checkbox'] },
-    { pattern: /时间|日期|日历/, components: ['date-picker', 'time-picker', 'calendar', 'datetime-picker'] },
-    { pattern: /上传|文件|图片/, components: ['upload', 'image', 'lbg-upload'] },
-    { pattern: /搜索|查询|过滤/, components: ['input', 'select', 'emp-search', 'table'] },
-  ];
-
-  for (const { pattern, components } of useCasePatterns) {
-    if (pattern.test(useCaseLower)) {
-      return components
-        .map(id => getComponentMeta(id))
-        .filter((c): c is ComponentMeta => !!c);
+export function suggestComponents(
+  useCase: string,
+  limit: number = 5
+): Array<{ component: ComponentMeta; relevance: number }> {
+  const result = safeExecute(() => {
+    if (typeof useCase !== 'string') {
+      throw new Error('useCase must be a string');
     }
-  }
+    if (!Number.isInteger(limit) || limit < 1 || limit > 100) {
+      throw new Error('limit must be an integer between 1 and 100');
+    }
+    return suggestComponentsByUseCase(useCase, getSearchIndex(), limit);
+  });
+  
+  return result ?? [];
+}
 
-  return [];
+/**
+ * 获取组件使用建议（简化版，仅返回组件列表）
+ * @deprecated 使用 suggestComponents 替代以获取相关度信息
+ */
+export function suggestComponentsLegacy(useCase: string): ComponentMeta[] {
+  return suggestComponents(useCase).map(r => r.component);
+}
+
+/**
+ * 安全获取组件元数据
+ * @param id - 组件ID
+ * @returns 组件元数据，未找到时返回 undefined
+ */
+export function getComponentMetaSafe(id: string): ComponentMeta | undefined {
+  return safeExecute(() => {
+    const meta = getComponentMeta(id);
+    if (!meta) {
+      throw new ComponentNotFoundError(id);
+    }
+    return meta;
+  });
 }

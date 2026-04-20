@@ -3,3 +3,4 @@ export const DOCS_DIR_NAME = 'docs';
 export function docRelativePath(markdownFile) {
     return `${DOCS_DIR_NAME}/${markdownFile}`;
 }
+//# sourceMappingURL=paths.js.map

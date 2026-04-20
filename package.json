@@ -8,13 +8,35 @@
   "scripts": {
     "sync-docs": "node scripts/sync-docs.mjs",
     "analyze-usage": "node scripts/analyze-usage.mjs",
+    "generate-doc-index": "npm run build && node scripts/generate-doc-index.mjs",
+    "generate-component": "node scripts/generate-component.mjs",
     "typecheck": "tsc --noEmit",
     "build": "tsc",
-    "demo": "npm run build && node dist/examples/registry-demo.js"
+    "demo": "npm run build && node dist/examples/registry-demo.js",
+    "test": "npm run build && npm run test:search-index && npm run test:component-registry && npm run test:registry",
+    "test:search-index": "node tests/search-index.test.ts",
+    "test:component-registry": "node tests/component-registry.test.ts",
+    "test:registry": "node tests/registry.test.ts",
+    "test:benchmark": "npm run build && node tests/benchmark.test.ts",
+    "lint": "eslint src/**/*.ts scripts/**/*.mjs",
+    "lint:fix": "eslint src/**/*.ts scripts/**/*.mjs --fix",
+    "format": "prettier --write \"src/**/*.ts\" \"scripts/**/*.mjs\" \"examples/**/*.ts\" \"examples/**/*.mjs\"",
+    "format:check": "prettier --check \"src/**/*.ts\" \"scripts/**/*.mjs\" \"examples/**/*.ts\" \"examples/**/*.mjs\"",
+    "ci": "npm run lint && npm run typecheck && npm run test && npm run build"
   },
   "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@typescript-eslint/eslint-plugin": "^7.0.0",
+    "@typescript-eslint/parser": "^7.0.0",
+    "eslint": "^8.57.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-import": "^2.29.0",
+    "prettier": "^3.2.0",
     "typescript": "~5.6.3"
   },
   "main": "./src/index.ts",
-  "types": "./src/index.ts"
+  "types": "./src/index.ts",
+  "engines": {
+    "node": ">=18.0.0"
+  }
 }

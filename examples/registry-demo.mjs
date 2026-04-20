@@ -10,12 +10,11 @@ import {
   getRelatedComponents,
   getComponentsByCategory,
   getStandalonePackages,
-  
+
   // 智能搜索
-  smartSearch,
   suggestComponents,
   getCategoryStats,
-  
+
   // 常量
   CATEGORY_NAMES,
   COMPONENT_REGISTRY,
@@ -33,17 +32,17 @@ console.log(`   总计: ${COMPONENT_REGISTRY.length} 个组件\n`);
 
 // 2. 搜索组件示例
 console.log('2. 搜索 "按钮":');
-const buttonResults = searchComponents('按钮');
-buttonResults.slice(0, 5).forEach(comp => {
+const buttonResults = searchComponents('按钮', { limit: 5 });
+buttonResults.forEach((comp) => {
   console.log(`   - ${comp.displayName} (${comp.id}): ${comp.keywords.slice(0, 3).join(', ')}...`);
 });
 console.log();
 
 // 3. 智能搜索
 console.log('3. 智能搜索 "弹窗":');
-const dialogResults = smartSearch('弹窗');
-dialogResults.slice(0, 5).forEach(({ component, score, matchedBy }) => {
-  console.log(`   - ${component.displayName} (${component.id}): 分数=${score}, 匹配=${matchedBy.join(',')}`);
+const dialogResults = searchComponents('弹窗', { limit: 5, fuzzy: true });
+dialogResults.forEach((comp, index) => {
+  console.log(`   ${index + 1}. ${comp.displayName} (${comp.id})`);
 });
 console.log();
 
@@ -62,23 +61,23 @@ console.log();
 // 5. 获取关联组件
 console.log('5. table 的关联组件:');
 const related = getRelatedComponents('table');
-related.forEach(comp => {
+related.forEach((comp) => {
   console.log(`   - ${comp.displayName} (${comp.id})`);
 });
 console.log();
 
 // 6. 使用场景推荐
 console.log('6. 表单场景推荐组件:');
-const formSuggestions = suggestComponents('需要一个表单来提交数据');
-formSuggestions.forEach(comp => {
-  console.log(`   - ${comp.displayName} (${comp.id})`);
+const formSuggestions = suggestComponents('需要一个表单来提交数据', 5);
+formSuggestions.forEach(({ component, relevance }) => {
+  console.log(`   - ${component.displayName} (${component.id}): 相关度 ${(relevance * 100).toFixed(0)}%`);
 });
 console.log();
 
 // 7. 独立包组件
 console.log('7. 独立包组件:');
 const standalone = getStandalonePackages();
-standalone.forEach(comp => {
+standalone.forEach((comp) => {
   console.log(`   - ${comp.displayName}: yarn add ${comp.packageName}`);
 });
 console.log();

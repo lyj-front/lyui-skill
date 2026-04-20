@@ -3,47 +3,12 @@
  * 包含组件分类、关键词、关联组件等元数据，用于智能检索
  */
 
-export interface ComponentMeta {
-  /** 组件 ID（文件名不含扩展名） */
-  id: string;
-  /** 显示名称 */
-  displayName: string;
-  /** 分类 */
-  category: ComponentCategory;
-  /** 关键词（用于模糊匹配） */
-  keywords: string[];
-  /** 关联组件 */
-  related: string[];
-  /** 复杂度 */
-  complexity: 'simple' | 'medium' | 'complex';
-  /** 文档路径 */
-  docPath: string;
-  /** 是否有独立包 */
-  hasStandalonePackage?: boolean;
-  /** 包名（如果有独立包） */
-  packageName?: string;
-}
+import type {
+  ComponentMeta,
+  ComponentCategory,
+} from './types.js';
 
-export type ComponentCategory =
-  | 'basic'           // 基础组件
-  | 'form'            // 表单组件
-  | 'data'            // 数据展示
-  | 'feedback'        // 反馈组件
-  | 'navigation'      // 导航组件
-  | 'business'        // 业务组件
-  | 'guide'           // 指南文档
-  | 'other';          // 其他
-
-export const CATEGORY_NAMES: Record<ComponentCategory, string> = {
-  basic: '基础组件',
-  form: '表单组件',
-  data: '数据展示',
-  feedback: '反馈组件',
-  navigation: '导航组件',
-  business: '业务组件',
-  guide: '指南文档',
-  other: '其他',
-};
+export type { ComponentMeta, ComponentCategory };
 
 /**
  * 组件元数据注册表
@@ -995,6 +960,20 @@ export const COMPONENT_REGISTRY: ComponentMeta[] = [
 ];
 
 /**
+ * 分类名称映射
+ */
+export const CATEGORY_NAMES: Record<ComponentCategory, string> = {
+  basic: '基础组件',
+  form: '表单组件',
+  data: '数据展示',
+  feedback: '反馈组件',
+  navigation: '导航组件',
+  business: '业务组件',
+  guide: '指南文档',
+  other: '其他',
+};
+
+/**
  * 组件 ID 到元数据的映射
  */
 export const COMPONENT_MAP: Map<string, ComponentMeta> = new Map(
@@ -1025,6 +1004,7 @@ export function getComponentMeta(id: string): ComponentMeta | undefined {
 /**
  * 根据关键词搜索组件
  * 支持模糊匹配组件名、关键词、ID
+ * @deprecated 使用 SearchIndex 类替代以获得更好的性能
  */
 export function searchComponents(keyword: string): ComponentMeta[] {
   const lowerKeyword = keyword.toLowerCase();
