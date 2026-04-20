@@ -21,6 +21,7 @@ import {
   safeExecute,
   ComponentNotFoundError,
 } from './errors.js';
+import { logSearch, logSuggest } from './logger.js';
 import type { DocIndexEntry, ComponentMeta, ComponentCategory, SearchResult, SearchOptions } from './types.js';
 
 // 导出类型
@@ -140,6 +141,8 @@ export function smartSearch(query: string, options?: SearchOptions): SearchResul
  * searchComponents('button') // 返回 button 组件
  */
 export function searchComponents(query: string, options?: SearchOptions): ComponentMeta[] {
+  const startTime = performance.now();
+  
   const result = safeExecute(() => {
     validateSearchQuery(query);
     if (options) {
@@ -149,7 +152,13 @@ export function searchComponents(query: string, options?: SearchOptions): Compon
     return results.map(r => r.component);
   });
   
-  return result ?? [];
+  const duration = performance.now() - startTime;
+  const components = result ?? [];
+  
+  // 记录日志
+  logSearch(query, options, components.length, duration);
+  
+  return components;
 }
 
 /**
@@ -177,6 +186,8 @@ export function suggestComponents(
   useCase: string,
   limit: number = 5
 ): Array<{ component: ComponentMeta; relevance: number }> {
+  const startTime = performance.now();
+  
   const result = safeExecute(() => {
     if (typeof useCase !== 'string') {
       throw new Error('useCase must be a string');
@@ -187,7 +198,13 @@ export function suggestComponents(
     return suggestComponentsByUseCase(useCase, getSearchIndex(), limit);
   });
   
-  return result ?? [];
+  const duration = performance.now() - startTime;
+  const suggestions = result ?? [];
+  
+  // 记录日志
+  logSuggest(useCase, suggestions.length, duration);
+  
+  return suggestions;
 }
 
 /**

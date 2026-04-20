@@ -10,6 +10,9 @@
     "analyze-usage": "node scripts/analyze-usage.mjs",
     "generate-doc-index": "npm run build && node scripts/generate-doc-index.mjs",
     "generate-component": "node scripts/generate-component.mjs",
+    "view-logs": "node scripts/view-logs.mjs",
+    "view-logs:today": "node scripts/view-logs.mjs --today",
+    "view-logs:stats": "node scripts/view-logs.mjs --stats",
     "typecheck": "tsc --noEmit",
     "build": "tsc",
     "demo": "npm run build && node dist/examples/registry-demo.js",
@@ -25,7 +28,7 @@
     "ci": "npm run lint && npm run typecheck && npm run test && npm run build"
   },
   "devDependencies": {
-    "@types/node": "^20.0.0",
+    "@types/node": "^20.19.39",
     "@typescript-eslint/eslint-plugin": "^7.0.0",
     "@typescript-eslint/parser": "^7.0.0",
     "eslint": "^8.57.0",

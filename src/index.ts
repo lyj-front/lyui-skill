@@ -28,6 +28,16 @@ export {
   safeExecuteAsync,
 } from './core/errors.js';
 
+// 日志记录
+export {
+  logTrigger,
+  logSearch,
+  logSuggest,
+  logError,
+  getLogPath,
+  type LogEntry,
+} from './core/logger.js';
+
 // 文档解析和索引
 export {
   DocIndex,

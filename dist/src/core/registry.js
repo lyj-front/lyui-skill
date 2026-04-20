@@ -6,6 +6,7 @@ import { DOC_FILES } from './doc-manifest.js';
 import { COMPONENT_REGISTRY, COMPONENT_MAP, COMPONENTS_BY_CATEGORY, CATEGORY_NAMES, getComponentMeta, getRelatedComponents, getComponentsByCategory, getStandalonePackages, } from './component-registry.js';
 import { SearchIndex, suggestComponentsByUseCase } from './search-index.js';
 import { validateSearchQuery, validateSearchOptions, safeExecute, ComponentNotFoundError, } from './errors.js';
+import { logSearch, logSuggest } from './logger.js';
 // 导出常量
 export { COMPONENT_REGISTRY, COMPONENT_MAP, COMPONENTS_BY_CATEGORY, CATEGORY_NAMES, };
 // 导出基础查询函数
@@ -91,6 +92,7 @@ export function smartSearch(query, options) {
  * searchComponents('button') // 返回 button 组件
  */
 export function searchComponents(query, options) {
+    const startTime = performance.now();
     const result = safeExecute(() => {
         validateSearchQuery(query);
         if (options) {
@@ -99,7 +101,11 @@ export function searchComponents(query, options) {
         const results = getSearchIndex().search(query, options);
         return results.map(r => r.component);
     });
-    return result ?? [];
+    const duration = performance.now() - startTime;
+    const components = result ?? [];
+    // 记录日志
+    logSearch(query, options, components.length, duration);
+    return components;
 }
 /**
  * 获取分类统计信息
@@ -118,6 +124,7 @@ export function getCategoryStats() {
  * @returns 推荐的组件列表及其相关度
  */
 export function suggestComponents(useCase, limit = 5) {
+    const startTime = performance.now();
     const result = safeExecute(() => {
         if (typeof useCase !== 'string') {
             throw new Error('useCase must be a string');
@@ -127,7 +134,11 @@ export function suggestComponents(useCase, limit = 5) {
         }
         return suggestComponentsByUseCase(useCase, getSearchIndex(), limit);
     });
-    return result ?? [];
+    const duration = performance.now() - startTime;
+    const suggestions = result ?? [];
+    // 记录日志
+    logSuggest(useCase, suggestions.length, duration);
+    return suggestions;
 }
 /**
  * 获取组件使用建议（简化版，仅返回组件列表）
